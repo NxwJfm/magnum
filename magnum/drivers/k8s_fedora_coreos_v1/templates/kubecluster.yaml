@@ -36,6 +36,18 @@ conditions:
     - create_cluster_resources
     - is_worker
 
+  calico_v3_26:
+    yaql:
+      expression: $.data.calico_tag.startsWith("v3.26.")
+      data:
+        calico_tag: {get_param: calico_tag}
+
+  calico_v3_27:
+    yaql:
+      expression: $.data.calico_tag.startsWith("v3.27.")
+      data:
+        calico_tag: {get_param: calico_tag}
+
   calico_v3_3:
     yaql:
       expression: $.data.calico_tag.startsWith("v3.3.")
@@ -1422,9 +1434,9 @@ resources:
             - get_file: ../../common/templates/kubernetes/fragments/kube-apiserver-to-kubelet-role.sh
             - get_file: ../../common/templates/kubernetes/fragments/core-dns-service.sh
             - if:
-                - calico_v3_3
-                - get_file: ../../common/templates/kubernetes/fragments/calico-service-v3-3-x.sh
-                - get_file: ../../common/templates/kubernetes/fragments/calico-service.sh
+                - calico_v3_27
+                - get_file: ../../common/templates/kubernetes/fragments/calico-service-v3-27-x.sh
+                - get_file: ../../common/templates/kubernetes/fragments/calico-service-v3-21-x.sh
             - get_file: ../../common/templates/kubernetes/fragments/flannel-service.sh
             - get_file: ../../common/templates/kubernetes/fragments/enable-helm-tiller.sh
             - str_replace:
