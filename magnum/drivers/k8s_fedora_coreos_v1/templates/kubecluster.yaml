@@ -1420,7 +1420,7 @@ resources:
                 - calico_v3_26
                 - get_file: ../../common/templates/kubernetes/fragments/calico-service-v3-26-x.sh
                 - get_file: ../../common/templates/kubernetes/fragments/calico-service-v3-21-x.sh
-            -if:
+            - if:
                 - calico_v3_27
                 - get_file: ../../common/templates/kubernetes/fragments/calico-service-v3-27-x.sh
                 - get_file: ../../common/templates/kubernetes/fragments/calico-service-v3-21-x.sh
