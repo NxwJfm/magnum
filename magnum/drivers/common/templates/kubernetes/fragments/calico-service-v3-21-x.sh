@@ -3805,6 +3805,9 @@ rules:
   - apiGroups: [""]
     resources:
       - nodes
+      - pods
+      - namespaces
+      - serviceaccounts
     verbs:
       - watch
       - list
@@ -3817,6 +3820,12 @@ rules:
       - get
       - list
       - watch
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+    verbs:
+      - watch
+      - list
   # IPAM resources are manipulated when nodes are deleted.
   - apiGroups: ["crd.projectcalico.org"]
     resources:
@@ -3891,6 +3900,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: calico-node
 rules:
+  # Used for creating service account tokens to be used by the CNI plugin
+  - apiGroups: [""]
+    resources:
+      - serviceaccounts/token
+    resourceNames:
+      - calico-cni-plugin
+    verbs:
+      - create
   # The CNI plugin needs to get pods, nodes, and namespaces.
   - apiGroups: [""]
     resources:
@@ -3938,6 +3955,12 @@ rules:
     verbs:
       - watch
       - list
+  - apiGroups: ["policy.networking.k8s.io"]
+    resources:
+      - adminnetworkpolicies
+    verbs:
+      - watch
+      - list
   # Used by Calico for policy information.
   - apiGroups: [""]
     resources:
@@ -3959,6 +3982,7 @@ rules:
       - globalfelixconfigs
       - felixconfigurations
       - bgppeers
+      - bgpfilters
       - globalbgpconfigs
       - bgpconfigurations
       - ippools
@@ -3972,6 +3996,7 @@ rules:
       - hostendpoints
       - blockaffinities
       - caliconodestatuses
+      - tiers
     verbs:
       - get
       - list
@@ -4025,6 +4050,7 @@ rules:
       - ipamconfigs
     verbs:
       - get
+      - create
   # Block affinities must also be watchable by confd for route aggregation.
   - apiGroups: ["crd.projectcalico.org"]
     resources:
@@ -4038,8 +4064,51 @@ rules:
       - daemonsets
     verbs:
       - get
+---
+# Source: calico/templates/calico-node.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: calico-cni-plugin
+  namespace: kube-system
 
 ---
+
+# CNI cluster role
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: calico-cni-plugin
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+      - namespaces
+    verbs:
+      - get
+  - apiGroups: [""]
+    resources:
+      - pods/status
+    verbs:
+      - patch
+  - apiGroups: ["crd.projectcalico.org"]
+    resources:
+      - blockaffinities
+      - ipamblocks
+      - ipamhandles
+      - clusterinformations
+      - ippools
+      - ipreservations
+      - ipamconfigs
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+---
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4054,6 +4123,21 @@ subjects:
   namespace: kube-system
 
 ---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: calico-cni-plugin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: calico-cni-plugin
+subjects:
+- kind: ServiceAccount
+  name: calico-cni-plugin
+  namespace: kube-system
+---
+
 # Source: calico/templates/calico-node.yaml
 # This manifest installs the calico-node container, as well
 # as the CNI plugins and network config on
@@ -4368,8 +4452,8 @@ kind: ServiceAccount
 metadata:
   name: calico-node
   namespace: kube-system
-
 ---
+
 # Source: calico/templates/calico-kube-controllers.yaml
 # See https://github.com/projectcalico/kube-controllers
 apiVersion: apps/v1
