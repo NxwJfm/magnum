@@ -48,12 +48,11 @@ conditions:
       data:
         calico_tag: {get_param: calico_tag}
 
-  calico_v3_3:
+  calico_v3_28:
     yaql:
-      expression: $.data.calico_tag.startsWith("v3.26.")
+      expression: $.data.calico_tag.startsWith("v3.28.")
       data:
         calico_tag: {get_param: calico_tag}
-
 
 parameters:
 
